@@ -1,0 +1,50 @@
+{
+  "name": "mcp-compiler",
+  "bin": {
+    "mcp-compiler": "cli.js"
+  },
+  "version": "0.0.1",
+  "description": "A compiler for producing MCP servers",
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "webmcp",
+    "mcp",
+    "web"
+  ],
+  "homepage": "https://github.com/ripulio/web-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/ripulio/web-mcp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ripulio/web-mcp.git"
+  },
+  "license": "MIT",
+  "author": "James Garbutt (https://github.com/43081j)",
+  "type": "module",
+  "main": "lib/main.js",
+  "scripts": {
+    "lint": "npm run lint:format && npm run lint:js",
+    "lint:format": "prettier --check src test",
+    "lint:js": "oxlint src test",
+    "build:typecheck": "tsc -p tsconfig.test.json",
+    "build:js": "tsc",
+    "build": "npm run build:typecheck && npm run build:js",
+    "format": "prettier --write src test",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1",
+    "@vitest/coverage-v8": "^4.0.1",
+    "oxlint": "^1.24.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.1",
+    "zod": "^4.1.12"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
