@@ -1,6 +1,8 @@
-import {readFile, writeFile} from 'node:fs/promises';
+import {writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import ts from 'typescript';
+import type {ProjectContext, SourceToolInfo} from './shared.js';
+import {template} from './flavours/tmcp.js';
 
 export interface CompilerOptions {
   outDir?: string;
@@ -34,55 +36,99 @@ function tryReadConfigFile(cwd: string): ts.CompilerOptions {
   return parsedConfig.options;
 }
 
-export async function compileFile(
+function visit(node: ts.Node, context: ProjectContext) {
+  const hasExportModifier =
+    ts.canHaveModifiers(node) &&
+    ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+
+  if (hasExportModifier && ts.isFunctionDeclaration(node) && node.name) {
+    const functionName = node.name.text;
+
+    let description: string | undefined;
+
+    const jsDocComments = ts.getJSDocCommentsAndTags(node);
+    const firstComment = jsDocComments[0];
+
+    if (!firstComment || !ts.isJSDoc(firstComment)) {
+      return;
+    }
+
+    const hasMcpToolTag = firstComment.tags?.some(
+      (tag) => ts.isJSDocUnknownTag(tag) && tag.tagName.text === 'mcpTool'
+    );
+
+    if (!hasMcpToolTag) {
+      return;
+    }
+
+    if (typeof firstComment.comment === 'string') {
+      description = firstComment.comment;
+    }
+
+    const parameters = node.parameters
+      .map((param) => {
+        if (ts.isIdentifier(param.name)) {
+          return param.name.text;
+        }
+        return '';
+      })
+      .filter(Boolean);
+
+    const tool: SourceToolInfo = {
+      name: functionName,
+      parameters: parameters.map((p) => ({
+        name: p,
+        type: {} as ts.Type
+      }))
+    };
+    if (description) {
+      tool.description = description;
+    }
+    context.tools.push(tool);
+  }
+
+  ts.forEachChild(node, (node) => visit(node, context));
+}
+
+function generateCodeFromSourceFile(
+  sourceFile: ts.SourceFile,
+  context: ProjectContext
+): string {
+  visit(sourceFile, context);
+
+  return template(context);
+}
+
+export async function compile(
   filePath: string,
   options?: CompilerOptions
 ): Promise<void> {
   const cwd = options?.cwd ?? process.cwd();
   const outDir = path.resolve(cwd, options?.outDir || '.');
-  const outExtension = options?.outExtension || '.mjs';
-  const input = await readFile(filePath, 'utf-8');
-  const extname = path.extname(filePath);
+  const outExtension = options?.outExtension || '.ts';
+  const compilerOptions = tryReadConfigFile(cwd);
+  const resolvedFilePath = path.resolve(cwd, filePath);
 
-  if (extname !== 'ts') {
-    throw new Error('Only TypeScript files are supported.');
+  const host = ts.createCompilerHost(compilerOptions, true);
+  const program = ts.createProgram([resolvedFilePath], compilerOptions, host);
+  const sourceFile = program.getSourceFile(resolvedFilePath);
+
+  if (!sourceFile) {
+    throw new Error(`Could not read source file: ${resolvedFilePath}`);
   }
 
-  const outputName = path.basename(filePath, extname) + outExtension;
-
-  const outputPath = path.join(outDir, outputName);
-  const output = await compile(input, options);
-
-  await writeFile(outputPath, output);
-}
-
-export async function compile(
-  input: string,
-  options?: CompilerOptions
-): Promise<string> {
-  const cwd = options?.cwd ?? process.cwd();
-  const fileName = 'input.ts';
-  const compilerOptions = tryReadConfigFile(cwd);
-
-  const host = ts.createCompilerHost(compilerOptions);
-
-  const originalReadFile = host.readFile;
-  host.readFile = (path) => {
-    if (path === fileName) {
-      return input;
-    }
-    return originalReadFile(path);
+  const baseName = path.basename(filePath, path.extname(filePath));
+  const outputFileName = `${baseName}.generated${outExtension}`;
+  const outputPath = path.join(outDir, outputFileName);
+  const context: ProjectContext = {
+    name: 'Generated MCP Server',
+    version: '1.0.0',
+    tools: [],
+    sourceFilePath: resolvedFilePath,
+    outputFilePath: outputPath
   };
 
-  const originalFileExists = host.fileExists;
-  host.fileExists = (path) => {
-    if (path === fileName) {
-      return true;
-    }
-    return originalFileExists ? originalFileExists(path) : false;
-  };
+  const generatedCode = generateCodeFromSourceFile(sourceFile, context);
 
-  const program = ts.createProgram([fileName], compilerOptions, host);
-
-  return '';
+  await writeFile(outputPath, generatedCode, 'utf-8');
 }

@@ -2,6 +2,7 @@ import {McpServer} from 'tmcp';
 import {ZodJsonSchemaAdapter} from '@tmcp/adapter-zod';
 import {StdioTransport} from '@tmcp/transport-stdio';
 import {z} from 'zod/mini';
+import {playWithNumbers} from './input.js';
 
 const adapter = new ZodJsonSchemaAdapter();
 const server = new McpServer(
@@ -29,7 +30,7 @@ server.tool(
     })
   },
   async ({num}) => {
-    return num * 2 + 10;
+    return playWithNumbers(num);
   }
 );
 

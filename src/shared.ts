@@ -22,4 +22,6 @@ export interface ProjectContext {
   description?: string;
   tools: SourceToolInfo[];
   transport?: Transport;
+  sourceFilePath: string;
+  outputFilePath: string;
 }
