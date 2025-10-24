@@ -1,4 +1,4 @@
-import type {Type} from 'typescript';
+import type {Type, TypeChecker} from 'typescript';
 
 export interface SourceParameter {
   name: string;
@@ -24,4 +24,5 @@ export interface ProjectContext {
   transport?: Transport;
   sourceFilePath: string;
   outputFilePath: string;
+  typeChecker: TypeChecker;
 }

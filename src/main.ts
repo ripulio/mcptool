@@ -10,6 +10,66 @@ export interface CompilerOptions {
   cwd?: string;
 }
 
+function isPlainObjectType(
+  type: ts.Type,
+  typeChecker: ts.TypeChecker
+): boolean {
+  if (
+    type.flags &
+    (ts.TypeFlags.String |
+      ts.TypeFlags.Number |
+      ts.TypeFlags.Boolean |
+      ts.TypeFlags.Null |
+      ts.TypeFlags.Undefined |
+      ts.TypeFlags.Void |
+      ts.TypeFlags.StringLiteral |
+      ts.TypeFlags.NumberLiteral |
+      ts.TypeFlags.BooleanLiteral)
+  ) {
+    return true;
+  }
+
+  if (typeChecker.isArrayType(type)) {
+    const typeArgs = (type as ts.TypeReference).typeArguments;
+    if (typeArgs && typeArgs.length > 0) {
+      return isPlainObjectType(typeArgs[0]!, typeChecker);
+    }
+    return true;
+  }
+
+  const symbol = type.getSymbol();
+  if (symbol) {
+    const name = symbol.getName();
+    if (name === 'Map' || name === 'Set') {
+      const typeArgs = (type as ts.TypeReference).typeArguments;
+      if (typeArgs && typeArgs.length > 0) {
+        return typeArgs.every((arg) => isPlainObjectType(arg, typeChecker));
+      }
+      return true;
+    }
+  }
+
+  if (type.isUnion()) {
+    return type.types.every((t) => isPlainObjectType(t, typeChecker));
+  }
+
+  if (type.isIntersection()) {
+    return type.types.every((t) => isPlainObjectType(t, typeChecker));
+  }
+
+  if (type.flags & ts.TypeFlags.Object) {
+    const objectType = type as ts.ObjectType;
+
+    return (objectType.objectFlags & ts.ObjectFlags.Class) === 0;
+  }
+
+  if (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) {
+    return true;
+  }
+
+  return false;
+}
+
 function tryReadConfigFile(cwd: string): ts.CompilerOptions {
   const configPath = ts.findConfigFile(cwd, ts.sys.fileExists, 'tsconfig.json');
 
@@ -36,7 +96,11 @@ function tryReadConfigFile(cwd: string): ts.CompilerOptions {
   return parsedConfig.options;
 }
 
-function visit(node: ts.Node, context: ProjectContext) {
+function visit(
+  node: ts.Node,
+  context: ProjectContext,
+  typeChecker: ts.TypeChecker
+) {
   const hasExportModifier =
     ts.canHaveModifiers(node) &&
     ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
@@ -67,19 +131,30 @@ function visit(node: ts.Node, context: ProjectContext) {
 
     const parameters = node.parameters
       .map((param) => {
-        if (ts.isIdentifier(param.name)) {
-          return param.name.text;
+        const paramName = ts.isIdentifier(param.name) ? param.name.text : '';
+        const paramType = typeChecker.getTypeAtLocation(param);
+        const isOptional =
+          param.questionToken !== undefined || param.initializer !== undefined;
+
+        if (!isPlainObjectType(paramType, typeChecker)) {
+          throw new Error(
+            `Parameter "${paramName}" in function "${functionName}" has an unsupported type. ` +
+              `Only plain objects, primitives, and arrays are allowed. ` +
+              `Complex types like class instances, Date, Map, Set, etc. are not supported.`
+          );
         }
-        return '';
+
+        return {
+          name: paramName,
+          type: paramType,
+          optional: isOptional
+        };
       })
-      .filter(Boolean);
+      .filter((p) => p.name !== '');
 
     const tool: SourceToolInfo = {
       name: functionName,
-      parameters: parameters.map((p) => ({
-        name: p,
-        type: {} as ts.Type
-      }))
+      parameters
     };
     if (description) {
       tool.description = description;
@@ -87,14 +162,15 @@ function visit(node: ts.Node, context: ProjectContext) {
     context.tools.push(tool);
   }
 
-  ts.forEachChild(node, (node) => visit(node, context));
+  ts.forEachChild(node, (node) => visit(node, context, typeChecker));
 }
 
 function generateCodeFromSourceFile(
   sourceFile: ts.SourceFile,
-  context: ProjectContext
+  context: ProjectContext,
+  typeChecker: ts.TypeChecker
 ): string {
-  visit(sourceFile, context);
+  visit(sourceFile, context, typeChecker);
 
   return template(context);
 }
@@ -117,6 +193,7 @@ export async function compile(
     throw new Error(`Could not read source file: ${resolvedFilePath}`);
   }
 
+  const typeChecker = program.getTypeChecker();
   const baseName = path.basename(filePath, path.extname(filePath));
   const outputFileName = `${baseName}.generated${outExtension}`;
   const outputPath = path.join(outDir, outputFileName);
@@ -125,10 +202,15 @@ export async function compile(
     version: '1.0.0',
     tools: [],
     sourceFilePath: resolvedFilePath,
-    outputFilePath: outputPath
+    outputFilePath: outputPath,
+    typeChecker
   };
 
-  const generatedCode = generateCodeFromSourceFile(sourceFile, context);
+  const generatedCode = generateCodeFromSourceFile(
+    sourceFile,
+    context,
+    typeChecker
+  );
 
   await writeFile(outputPath, generatedCode, 'utf-8');
 }
