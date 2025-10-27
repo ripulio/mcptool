@@ -1,6 +1,8 @@
 import * as prompts from '@clack/prompts';
 
-export const silentLogger: typeof prompts.log = {
+export type Logger = typeof prompts.log;
+
+export const silentLogger: Logger = {
   info: () => {},
   warn: () => {},
   error: (...args) => prompts.log.error(...args),
@@ -10,6 +12,6 @@ export const silentLogger: typeof prompts.log = {
   warning: () => {}
 };
 
-export const getLogger = (silent?: boolean): typeof prompts.log => {
+export const getLogger = (silent?: boolean): Logger => {
   return silent ? silentLogger : prompts.log;
 };

@@ -4,6 +4,7 @@ import {resolve} from 'node:path';
 import {existsSync} from 'node:fs';
 import {compile} from './compiler.js';
 import {CompilerOptions, validMCPFlavors, validTransports} from './shared.js';
+import {installDependencies} from './install-dependencies.js';
 import {readPackageJSON} from 'pkg-types';
 
 const prog = sade('mcp-compiler <filePath>', true);
@@ -22,6 +23,7 @@ prog
   .option('--flavor, -f', 'MCP flavor (tmcp or mcp)', 'tmcp')
   .option('--interactive, -i', 'Run in interactive mode', false)
   .option('--silent, -s', 'Suppress output messages', false)
+  .option('--install', 'Automatically install missing dependencies', false)
   .action(async (filePath, options) => {
     const silent = options.silent === true;
     const compilerOpts: CompilerOptions = {
@@ -141,11 +143,16 @@ prog
     }
     const result = await compile(filePath, compilerOpts);
 
-    if (!result) {
+    if (!result.success) {
       prompts.cancel('Compilation failed.');
       process.exitCode = 1;
       return;
     }
+
+    if (options.install && result.dependencies.length > 0) {
+      await installDependencies(result.dependencies, cwd, silent);
+    }
+
     prompts.outro('Compilation successful!');
   });
 

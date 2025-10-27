@@ -1,13 +1,16 @@
-import type {ProjectContext} from './shared.js';
+import type {ProjectDependency} from './shared.js';
 import {x} from 'tinyexec';
+import * as prompts from '@clack/prompts';
 
 export async function installDependencies(
-  context: ProjectContext
+  dependencies: ProjectDependency[],
+  cwd: string,
+  silent: boolean
 ): Promise<void> {
   const devDeps: string[] = [];
   const prodDeps: string[] = [];
 
-  for (const dep of context.dependencies) {
+  for (const dep of dependencies) {
     const depString = `${dep.name}@${dep.version}`;
     if (dep.type === 'dev') {
       devDeps.push(depString);
@@ -17,12 +20,32 @@ export async function installDependencies(
   }
 
   if (prodDeps.length > 0) {
-    console.log(`Installing production dependencies: ${prodDeps.join(', ')}`);
-    await x('npm', ['install', '-S', ...prodDeps]);
+    let spinner: ReturnType<typeof prompts.spinner> | null = null;
+
+    if (!silent) {
+      spinner = prompts.spinner();
+      spinner.start('Installing new production dependencies...');
+    }
+    await x('npm', ['install', '-S', ...prodDeps], {
+      nodeOptions: {cwd}
+    });
+    if (!silent && spinner) {
+      spinner.stop('Production dependencies installed.');
+    }
   }
 
   if (devDeps.length > 0) {
-    console.log(`Installing development dependencies: ${devDeps.join(', ')}`);
-    await x('npm', ['install', '-D', ...devDeps]);
+    let spinner: ReturnType<typeof prompts.spinner> | null = null;
+
+    if (!silent) {
+      spinner = prompts.spinner();
+      spinner.start('Installing new development dependencies...');
+    }
+    await x('npm', ['install', '-D', ...devDeps], {
+      nodeOptions: {cwd}
+    });
+    if (!silent && spinner) {
+      spinner.stop('Development dependencies installed.');
+    }
   }
 }

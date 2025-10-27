@@ -1,11 +1,14 @@
 import path from 'node:path';
 import {writeFile} from 'node:fs/promises';
 import ts from 'typescript';
-import type {ProjectContext, CompilerOptions} from './shared.js';
+import type {
+  ProjectContext,
+  CompilerOptions,
+  ProjectDependency
+} from './shared.js';
 import {visitMCPExports} from './ast.js';
 import {template as tmcpTemplate} from './flavours/tmcp.js';
 import {template as mcpTemplate} from './flavours/mcp.js';
-import {installDependencies} from './install-dependencies.js';
 import {tryFormatFile} from './format.js';
 import {getLogger} from './logger.js';
 
@@ -50,16 +53,81 @@ function generateCodeFromSourceFile(
   }
 }
 
+export interface CompileResultSuccess {
+  success: true;
+  dependencies: ProjectDependency[];
+}
+
+export interface CompileResultFailure {
+  success: false;
+}
+
+export type CompileResult = CompileResultSuccess | CompileResultFailure;
+
+function computeDependenciesForFlavor(
+  context: ProjectContext
+): ProjectDependency[] {
+  const dependencies: ProjectDependency[] = [];
+
+  switch (context.flavor) {
+    case 'tmcp': {
+      dependencies.push(
+        {type: 'prod', name: 'tmcp', version: '^1.15.5'},
+        {type: 'prod', name: '@tmcp/adapter-zod', version: '^0.1.6'},
+        {type: 'prod', name: 'zod', version: '^4.1.12'}
+      );
+      if (context.transport === 'http') {
+        dependencies.push({
+          type: 'prod',
+          name: '@tmcp/transport-http',
+          version: '^0.7.1'
+        });
+      } else if (context.transport === 'stdio') {
+        dependencies.push({
+          type: 'prod',
+          name: '@tmcp/transport-stdio',
+          version: '^0.3.1'
+        });
+      }
+      break;
+    }
+    case 'mcp': {
+      dependencies.push(
+        {type: 'prod', name: '@modelcontextprotocol/sdk', version: '^1.20.2'},
+        {type: 'prod', name: 'zod', version: '^4.1.12'}
+      );
+      break;
+    }
+  }
+
+  return dependencies;
+}
+
 export async function compile(
   filePath: string,
   options?: CompilerOptions
-): Promise<boolean> {
+): Promise<CompileResult> {
   const cwd = options?.cwd ?? process.cwd();
   const silent = options?.silent === true;
   const logger = getLogger(silent);
   const outDir = path.resolve(cwd, options?.outDir || '.');
   const outExtension = options?.outExtension || '.ts';
-  const compilerOptions = tryReadConfigFile(cwd);
+  let compilerOptions: ts.CompilerOptions;
+  try {
+    compilerOptions = tryReadConfigFile(cwd);
+  } catch (err) {
+    logger.warn(
+      `Warning: Could not read tsconfig.json in "${cwd}". Using default compiler options.`
+    );
+    compilerOptions = {
+      target: ts.ScriptTarget.ES2020,
+      module: ts.ModuleKind.ES2020,
+      strict: true,
+      esModuleInterop: true,
+      forceConsistentCasingInFileNames: true,
+      skipLibCheck: true
+    };
+  }
   const resolvedFilePath = path.resolve(cwd, filePath);
 
   const host = ts.createCompilerHost(compilerOptions, true);
@@ -68,7 +136,7 @@ export async function compile(
 
   if (!sourceFile) {
     logger.error(`Could not read source file: ${resolvedFilePath}`);
-    return false;
+    return {success: false};
   }
 
   const typeChecker = program.getTypeChecker();
@@ -83,7 +151,6 @@ export async function compile(
     sourceFilePath: resolvedFilePath,
     outputFilePath: outputPath,
     typeChecker,
-    dependencies: [],
     flavor: options?.flavor ?? 'tmcp',
     logger
   };
@@ -96,9 +163,10 @@ export async function compile(
 
   await writeFile(outputPath, generatedCode, 'utf-8');
 
-  await installDependencies(context);
-
   await tryFormatFile(outputPath, cwd);
 
-  return true;
+  return {
+    success: true,
+    dependencies: computeDependenciesForFlavor(context)
+  };
 }

@@ -34,7 +34,6 @@ export interface ProjectContext {
   sourceFilePath: string;
   outputFilePath: string;
   typeChecker: TypeChecker;
-  dependencies: ProjectDependency[];
   flavor: MCPFlavor;
   logger: typeof prompts.log;
 }
