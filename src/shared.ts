@@ -1,4 +1,5 @@
 import type {Type, TypeChecker} from 'typescript';
+import * as prompts from '@clack/prompts';
 
 export interface SourceParameter {
   name: string;
@@ -35,6 +36,7 @@ export interface ProjectContext {
   typeChecker: TypeChecker;
   dependencies: ProjectDependency[];
   flavor: MCPFlavor;
+  logger: typeof prompts.log;
 }
 
 export interface CompilerOptions {
@@ -45,4 +47,8 @@ export interface CompilerOptions {
   name?: string;
   version?: string;
   flavor?: MCPFlavor;
+  silent?: boolean;
 }
+
+export const validMCPFlavors: MCPFlavor[] = ['tmcp', 'mcp'];
+export const validTransports: Transport[] = ['stdio', 'http'];

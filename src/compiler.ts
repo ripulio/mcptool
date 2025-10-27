@@ -6,6 +6,7 @@ import {visitMCPExports} from './ast.js';
 import {template as tmcpTemplate} from './flavours/tmcp.js';
 import {installDependencies} from './install-dependencies.js';
 import {tryFormatFile} from './format.js';
+import {getLogger} from './logger.js';
 
 function tryReadConfigFile(cwd: string): ts.CompilerOptions {
   const configPath = ts.findConfigFile(cwd, ts.sys.fileExists, 'tsconfig.json');
@@ -49,8 +50,10 @@ function generateCodeFromSourceFile(
 export async function compile(
   filePath: string,
   options?: CompilerOptions
-): Promise<void> {
+): Promise<boolean> {
   const cwd = options?.cwd ?? process.cwd();
+  const silent = options?.silent === true;
+  const logger = getLogger(silent);
   const outDir = path.resolve(cwd, options?.outDir || '.');
   const outExtension = options?.outExtension || '.ts';
   const compilerOptions = tryReadConfigFile(cwd);
@@ -61,7 +64,8 @@ export async function compile(
   const sourceFile = program.getSourceFile(resolvedFilePath);
 
   if (!sourceFile) {
-    throw new Error(`Could not read source file: ${resolvedFilePath}`);
+    logger.error(`Could not read source file: ${resolvedFilePath}`);
+    return false;
   }
 
   const typeChecker = program.getTypeChecker();
@@ -77,7 +81,8 @@ export async function compile(
     outputFilePath: outputPath,
     typeChecker,
     dependencies: [],
-    flavor: options?.flavor ?? 'tmcp'
+    flavor: options?.flavor ?? 'tmcp',
+    logger
   };
 
   const generatedCode = generateCodeFromSourceFile(
@@ -91,4 +96,6 @@ export async function compile(
   await installDependencies(context);
 
   await tryFormatFile(outputPath, cwd);
+
+  return true;
 }
