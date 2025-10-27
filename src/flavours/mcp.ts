@@ -1,26 +1,7 @@
 import type {ProjectContext, SourceToolInfo, Transport} from '../shared.js';
 import path from 'node:path';
-import ts from 'typescript';
+import type ts from 'typescript';
 import {generateSchemaForTool} from '../typescript-to-zod.js';
-
-function generateTool(tool: SourceToolInfo, checker: ts.TypeChecker): string {
-  const params =
-    tool.parameters.length > 0
-      ? `{${tool.parameters.map((p) => p.name).join(', ')}}`
-      : '';
-  return `
-server.tool(
-  {
-    name: ${JSON.stringify(tool.name)},
-    description: ${tool.description ? JSON.stringify(tool.description) : 'undefined'},
-    schema: ${generateSchemaForTool(tool, checker)}
-  },
-  async (${params}) => {
-    return ${tool.name}(${tool.parameters.map((p) => p.name).join(', ')});
-  },
-);
-  `.trim();
-}
 
 const addImportsForTransport = (
   transport: Transport | undefined,
@@ -28,15 +9,41 @@ const addImportsForTransport = (
 ): void => {
   switch (transport) {
     case 'stdio':
-      imports.push(`import {StdioTransport} from '@tmcp/transport-stdio';`);
+      imports.push(
+        `import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';`
+      );
       break;
     case 'http':
       imports.push(
-        `import {HttpTransport} from '@tmcp/transport-http';`,
+        `import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';`,
         `import * as http from 'node:http';`
       );
   }
 };
+
+function generateTool(tool: SourceToolInfo, checker: ts.TypeChecker): string {
+  const params =
+    tool.parameters.length > 0
+      ? `{${tool.parameters.map((p) => p.name).join(', ')}}`
+      : '';
+  return `
+server.registerTool(
+    ${JSON.stringify(tool.name)},
+    {
+        title: ${JSON.stringify(tool.name)},
+        description: ${tool.description ? JSON.stringify(tool.description) : 'undefined'},
+        inputSchema: ${generateSchemaForTool(tool, checker)}
+    },
+    async (${params}) => {
+        const output = await ${tool.name}(${tool.parameters.map((p) => p.name).join(', ')});
+        return {
+            content: [{ type: 'text', text: JSON.stringify(output) }],
+            structuredContent: output
+        };
+    }
+);
+  `.trim();
+}
 
 const generateTransportInitialization = (
   transport: Transport | undefined
@@ -44,16 +51,22 @@ const generateTransportInitialization = (
   switch (transport) {
     case 'stdio':
       return `
-const transport = new StdioTransport(server);
-transport.listen();
+const transport = new StdioServerTransport();
+await server.connect(transport);
       `.trim();
     case 'http':
       return `
 const transport = new HttpTransport(server, {port: 8080});
 const httpServer = http.createServer(async (req, res) => {
-  const response = await transport.respond(req);
-  res.writeHead(response.status, response.headers);
-  res.end(response.body);
+  const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+      enableJsonResponse: true
+  });
+  res.on('close', () => {
+      transport.close();
+  });
+  await server.connect(transport);
+  await transport.handleRequest(req, res, req.body);
 });
 httpServer.listen(8080);
       `.trim();
@@ -74,8 +87,7 @@ export const template = (context: ProjectContext): string => {
   ).replace(/\\/g, '/');
   const importNames = context.tools.map((t) => t.name).join(', ');
   const imports: string[] = [
-    `import {McpServer} from 'tmcp';`,
-    `import {ZodJsonSchemaAdapter} from '@tmcp/adapter-zod';`,
+    `import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';`,
     `import {z} from 'zod/mini';`
   ];
   addImportsForTransport(context.transport, imports);
@@ -93,21 +105,14 @@ export const template = (context: ProjectContext): string => {
 ${imports.join('\n')}
 
 const adapter = new ZodJsonSchemaAdapter();
-const server = new McpServer(
-  {
-    name: ${JSON.stringify(context.name)},
-    version: ${JSON.stringify(context.version)},
-    description: ${context.description ? JSON.stringify(context.description) : 'undefined'},
-  },
-  {
-    adapter,
-    capabilities: {
-    },
-  },
-);
+const server = new McpServer({
+  name: ${JSON.stringify(context.name)},
+  version: ${JSON.stringify(context.version)},
+});
 
 ${tools}
 
 ${generateTransportInitialization(context.transport)}
+
   `.trim();
 };

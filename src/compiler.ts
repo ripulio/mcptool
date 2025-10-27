@@ -4,6 +4,7 @@ import ts from 'typescript';
 import type {ProjectContext, CompilerOptions} from './shared.js';
 import {visitMCPExports} from './ast.js';
 import {template as tmcpTemplate} from './flavours/tmcp.js';
+import {template as mcpTemplate} from './flavours/mcp.js';
 import {installDependencies} from './install-dependencies.js';
 import {tryFormatFile} from './format.js';
 import {getLogger} from './logger.js';
@@ -42,6 +43,8 @@ function generateCodeFromSourceFile(
   visitMCPExports(sourceFile, context, typeChecker);
 
   switch (context.flavor) {
+    case 'mcp':
+      return mcpTemplate(context);
     default:
       return tmcpTemplate(context);
   }

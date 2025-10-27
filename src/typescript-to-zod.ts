@@ -1,4 +1,5 @@
 import ts from 'typescript';
+import type {SourceToolInfo} from './shared.js';
 
 export function generateTypeSchema(
   type: ts.Type,
@@ -141,4 +142,21 @@ export function generateTypeSchema(
   }
 
   return 'z.any()';
+}
+
+export function generateSchemaForTool(
+  tool: SourceToolInfo,
+  checker: ts.TypeChecker
+): string {
+  const params = tool.parameters
+    .map((param) => {
+      const schema = generateTypeSchema(param.type, checker);
+      const wrappedSchema = param.optional ? `z.optional(${schema})` : schema;
+      return `${param.name}: ${wrappedSchema}`;
+    })
+    .join(',\n  ');
+
+  return `z.object({
+  ${params}
+})`;
 }
