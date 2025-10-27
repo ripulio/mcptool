@@ -1,6 +1,6 @@
 import sade from 'sade';
 import * as prompts from '@clack/prompts';
-import {resolve} from 'node:path';
+import {resolve, dirname} from 'node:path';
 import {existsSync} from 'node:fs';
 import {compile} from './compiler.js';
 import {CompilerOptions, validMCPFlavors, validTransports} from './shared.js';
@@ -64,7 +64,7 @@ prog
           outDir: () =>
             prompts.text({
               message: 'Output directory:',
-              initialValue: compilerOpts.outDir || './'
+              initialValue: compilerOpts.outDir || dirname(filePath)
             }),
           outExtension: () =>
             prompts.text({

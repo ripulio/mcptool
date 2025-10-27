@@ -110,7 +110,8 @@ export async function compile(
   const cwd = options?.cwd ?? process.cwd();
   const silent = options?.silent === true;
   const logger = getLogger(silent);
-  const outDir = path.resolve(cwd, options?.outDir || '.');
+  const resolvedFilePath = path.resolve(cwd, filePath);
+  const outDir = path.resolve(cwd, options?.outDir || path.dirname(filePath));
   const outExtension = options?.outExtension || '.ts';
   let compilerOptions: ts.CompilerOptions;
   try {
@@ -128,7 +129,6 @@ export async function compile(
       skipLibCheck: true
     };
   }
-  const resolvedFilePath = path.resolve(cwd, filePath);
 
   const host = ts.createCompilerHost(compilerOptions, true);
   const program = ts.createProgram([resolvedFilePath], compilerOptions, host);

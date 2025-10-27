@@ -71,7 +71,9 @@ export const template = (context: ProjectContext): string => {
     relativeSourcePath.startsWith('.')
       ? relativeSourcePath
       : `./${relativeSourcePath}`
-  ).replace(/\\/g, '/');
+  )
+    .replace(/\\/g, '/')
+    .replace(/\.ts$/, '.js');
   const importNames = context.tools.map((t) => t.name).join(', ');
   const imports: string[] = [
     `import {McpServer} from 'tmcp';`,
