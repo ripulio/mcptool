@@ -1,7 +1,3 @@
-class SomeClass {
-  value: string;
-}
-
 /**
  * Plays with numbers
  * @param num - The number to play with
@@ -18,11 +14,9 @@ export function playWithNumbers(
   undefinedVal: undefined,
   anyVal: any,
   unknownVal: unknown,
-  instanceVal: SomeClass,
   stringLiteral: 'fixedString',
   trueValue: true,
   falseValue: false,
-  instanceArr: SomeClass[],
   tupleVal: [number, string, boolean],
   tupleWithRest: [number, ...string[]],
   mapVal: Map<string, number>,

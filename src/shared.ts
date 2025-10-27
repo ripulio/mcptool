@@ -16,13 +16,33 @@ export interface SourceToolInfo {
 
 export type Transport = 'stdio' | 'http';
 
+export interface ProjectDependency {
+  type: 'dev' | 'prod';
+  name: string;
+  version: string;
+}
+
+export type MCPFlavor = 'tmcp' | 'mcp';
+
 export interface ProjectContext {
   name: string;
   version: string;
   description?: string;
   tools: SourceToolInfo[];
-  transport?: Transport;
+  transport: Transport;
   sourceFilePath: string;
   outputFilePath: string;
   typeChecker: TypeChecker;
+  dependencies: ProjectDependency[];
+  flavor: MCPFlavor;
+}
+
+export interface CompilerOptions {
+  outDir?: string;
+  outExtension?: string;
+  cwd?: string;
+  transport?: Transport;
+  name?: string;
+  version?: string;
+  flavor?: MCPFlavor;
 }
