@@ -5,10 +5,25 @@ export function generateTypeSchema(
   type: ts.Type,
   checker: ts.TypeChecker
 ): string {
-  if (
-    type.flags & ts.TypeFlags.Boolean ||
-    type.flags & ts.TypeFlags.BooleanLiteral
-  ) {
+  // Handle literal types first (before broader primitive types)
+  if (type.flags & ts.TypeFlags.BooleanLiteral) {
+    const typeString = checker.typeToString(type);
+    const value = typeString === 'true';
+    return `z.literal(${value})`;
+  }
+
+  if (type.flags & ts.TypeFlags.StringLiteral) {
+    const value = (type as ts.StringLiteralType).value;
+    return `z.literal(${JSON.stringify(value)})`;
+  }
+
+  if (type.flags & ts.TypeFlags.NumberLiteral) {
+    const value = (type as ts.NumberLiteralType).value;
+    return `z.literal(${value})`;
+  }
+
+  // Handle broader primitive types
+  if (type.flags & ts.TypeFlags.Boolean) {
     return 'z.boolean()';
   }
 
@@ -111,17 +126,11 @@ export function generateTypeSchema(
     }
   }
 
-  if (
-    type.flags & ts.TypeFlags.String ||
-    type.flags & ts.TypeFlags.StringLiteral
-  ) {
+  if (type.flags & ts.TypeFlags.String) {
     return 'z.string()';
   }
 
-  if (
-    type.flags & ts.TypeFlags.Number ||
-    type.flags & ts.TypeFlags.NumberLiteral
-  ) {
+  if (type.flags & ts.TypeFlags.Number) {
     return 'z.number()';
   }
 

@@ -1,4 +1,5 @@
 import type {ProjectContext, SourceToolInfo, Transport} from '../shared.js';
+import {generateToolReturn} from '../shared.js';
 import path from 'node:path';
 import ts from 'typescript';
 import {generateSchemaForTool} from '../typescript-to-zod.js';
@@ -16,7 +17,8 @@ server.tool(
     schema: ${generateSchemaForTool(tool, checker)}
   },
   async (${params}) => {
-    return ${tool.name}(${tool.parameters.map((p) => p.name).join(', ')});
+    const result = await ${tool.name}(${tool.parameters.map((p) => p.name).join(', ')});
+    return ${generateToolReturn(tool, checker)};
   },
 );
   `.trim();
@@ -78,7 +80,7 @@ export const template = (context: ProjectContext): string => {
   const imports: string[] = [
     `import {McpServer} from 'tmcp';`,
     `import {ZodJsonSchemaAdapter} from '@tmcp/adapter-zod';`,
-    `import {z} from 'zod/mini';`
+    `import {z} from 'zod';`
   ];
   addImportsForTransport(context.transport, imports);
   if (importNames.length > 0) {

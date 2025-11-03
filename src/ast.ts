@@ -121,7 +121,8 @@ export function visitMCPExports(
 
     const tool: SourceToolInfo = {
       name: functionName,
-      parameters
+      parameters,
+      returnType: typeChecker.getTypeAtLocation(node)
     };
     if (description) {
       tool.description = description;
