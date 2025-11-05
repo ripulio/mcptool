@@ -116,7 +116,7 @@ export async function compile(
   let compilerOptions: ts.CompilerOptions;
   try {
     compilerOptions = tryReadConfigFile(cwd);
-  } catch (err) {
+  } catch {
     logger.warn(
       `Warning: Could not read tsconfig.json in "${cwd}". Using default compiler options.`
     );
