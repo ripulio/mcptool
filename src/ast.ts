@@ -119,10 +119,17 @@ export function visitMCPExports(
       })
       .filter((p) => p.name !== '');
 
+    const signature = typeChecker.getSignatureFromDeclaration(node);
+
+    if (!signature) {
+      return;
+    }
+
+    const returnType = signature.getReturnType();
     const tool: SourceToolInfo = {
       name: functionName,
       parameters,
-      returnType: typeChecker.getTypeAtLocation(node)
+      returnType
     };
     if (description) {
       tool.description = description;
