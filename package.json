@@ -13,13 +13,13 @@
     "mcp",
     "web"
   ],
-  "homepage": "https://github.com/ripulio/web-mcp#readme",
+  "homepage": "https://github.com/ripulio/mcptool#readme",
   "bugs": {
-    "url": "https://github.com/ripulio/web-mcp/issues"
+    "url": "https://github.com/ripulio/mcptool/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ripulio/web-mcp.git"
+    "url": "git+https://github.com/ripulio/mcptool.git"
   },
   "license": "MIT",
   "author": "James Garbutt (https://github.com/43081j)",
