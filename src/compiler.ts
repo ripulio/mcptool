@@ -111,8 +111,6 @@ export async function compile(
   const silent = options?.silent === true;
   const logger = getLogger(silent);
   const resolvedFilePath = path.resolve(cwd, filePath);
-  const outDir = path.resolve(cwd, options?.outDir || path.dirname(filePath));
-  const outExtension = options?.outExtension || '.ts';
   let compilerOptions: ts.CompilerOptions;
   try {
     compilerOptions = tryReadConfigFile(cwd);
@@ -141,8 +139,9 @@ export async function compile(
 
   const typeChecker = program.getTypeChecker();
   const baseName = path.basename(filePath, path.extname(filePath));
-  const outputFileName = `${baseName}.generated${outExtension}`;
-  const outputPath = path.join(outDir, outputFileName);
+  const outputPath = options?.outFile
+    ? path.resolve(cwd, options.outFile)
+    : path.join(path.dirname(resolvedFilePath), `${baseName}.generated.ts`);
   const context: ProjectContext = {
     name: options?.name ?? 'Generated MCP Server',
     version: options?.version ?? '1.0.0',

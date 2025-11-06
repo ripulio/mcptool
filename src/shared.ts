@@ -40,8 +40,7 @@ export interface ProjectContext {
 }
 
 export interface CompilerOptions {
-  outDir?: string;
-  outExtension?: string;
+  outFile?: string;
   cwd?: string;
   transport?: Transport;
   name?: string;

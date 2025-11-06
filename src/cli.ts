@@ -1,6 +1,6 @@
 import sade from 'sade';
 import * as prompts from '@clack/prompts';
-import {resolve, dirname} from 'node:path';
+import {resolve} from 'node:path';
 import {existsSync} from 'node:fs';
 import {compile} from './compiler.js';
 import {CompilerOptions, validMCPFlavors, validTransports} from './shared.js';
@@ -11,8 +11,7 @@ const prog = sade('mcp-compiler <filePath>', true);
 
 prog
   .version('1.0.0')
-  .option('--outDir, -o', 'Output directory for compiled files')
-  .option('--ext, -e', 'Output file extension', '.ts')
+  .option('--outFile, -o', 'Output file path')
   .option('--cwd, -c', 'Current working directory', '.')
   .option('--transport, -t', 'Transport method (stdio or http)', 'stdio')
   .option('--name, -n', 'Project name (defaults to `package.json` name)')
@@ -27,8 +26,7 @@ prog
   .action(async (filePath, options) => {
     const silent = options.silent === true;
     const compilerOpts: CompilerOptions = {
-      outDir: options.outDir || undefined,
-      outExtension: options.ext || undefined,
+      outFile: options.outFile || undefined,
       cwd: options.cwd || undefined,
       transport: options.transport || undefined,
       name: options.name || undefined,
@@ -61,15 +59,10 @@ prog
               message: 'Entry point:',
               initialValue: filePath || ''
             }),
-          outDir: () =>
+          outFile: () =>
             prompts.text({
-              message: 'Output directory:',
-              initialValue: compilerOpts.outDir || dirname(filePath)
-            }),
-          outExtension: () =>
-            prompts.text({
-              message: 'Output file extension:',
-              initialValue: compilerOpts.outExtension || '.ts'
+              message: 'Output file path:',
+              initialValue: compilerOpts.outFile || ''
             }),
           transport: () =>
             prompts.select({
@@ -101,8 +94,9 @@ prog
           }
         }
       );
-      compilerOpts.outDir = responses.outDir;
-      compilerOpts.outExtension = responses.outExtension;
+      if (responses.outFile) {
+        compilerOpts.outFile = responses.outFile;
+      }
       compilerOpts.transport = responses.transport;
       compilerOpts.name = responses.name;
       compilerOpts.version = responses.version;
