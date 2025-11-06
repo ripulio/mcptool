@@ -163,9 +163,9 @@ export function generateSchemaForTool(
       const wrappedSchema = param.optional ? `z.optional(${schema})` : schema;
       return `${param.name}: ${wrappedSchema}`;
     })
-    .join(',\n  ');
+    .join(',\n      ');
 
   return `z.object({
-  ${params}
-})`;
+      ${params}
+    })`;
 }

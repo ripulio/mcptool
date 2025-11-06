@@ -20,8 +20,8 @@ server.registerTool(
         title: "playWithNumbers",
         description: "Plays with numbers",
         inputSchema: z.object({
-  num: z.number()
-})
+      num: z.number()
+    })
     },
     async ({num}) => {
         const output = await playWithNumbers(num);
@@ -69,8 +69,8 @@ server.registerTool(
         title: "playWithNumbers",
         description: "Plays with numbers",
         inputSchema: z.object({
-  num: z.number()
-})
+      num: z.number()
+    })
     },
     async ({num}) => {
         const output = await playWithNumbers(num);
@@ -116,8 +116,8 @@ server.tool(
     name: "playWithNumbers",
     description: "Plays with numbers",
     schema: z.object({
-  num: z.number()
-})
+      num: z.number()
+    })
   },
   async ({num}) => {
     const result = await playWithNumbers(num);
@@ -167,8 +167,8 @@ server.tool(
     name: "playWithNumbers",
     description: "Plays with numbers",
     schema: z.object({
-  num: z.number()
-})
+      num: z.number()
+    })
   },
   async ({num}) => {
     const result = await playWithNumbers(num);

@@ -1,6 +1,11 @@
-# mcptool
+# 🤖 mcptool
 
 > A tool to generate TypeScript MCP servers from source code.
+
+- Supports multiple flavors (e.g. tmcp, official mcp)
+- Generates type-safe MCP tool implementations
+- Configurable transport methods (e.g. stdio, http)
+- Automatically installs missing dependencies
 
 ## Install
 
@@ -13,6 +18,32 @@ npm install -g mcptool
 ```bash
 npx mcptool src/input.ts -o src/server.ts
 ```
+
+### How it works
+
+This tool will process a typescript entrypoint and generate a fully functional MCP server implementation based on the provided code.
+
+For example, take the following code as input:
+
+```ts
+/**
+ * Adds two numbers
+ * @mcpTool
+ */
+export function add(a: number, b: number): number {
+  return a + b;
+}
+```
+
+If we run `npx mcptool src/input.ts`, this will generate an MCP server that exposes the `add` function as an MCP tool.
+
+**The generated file will be TypeScript**, and should be committed to your repository. This is not "build output", in that you can choose to modify it manually from now on or can use it as a pre-commit step to always regenerate it.
+
+Key points to note:
+
+- All exported functions of the entrypoint file with `@mcpTool` JSDoc comments will be exposed as MCP tools.
+- The generated server will use the types defined in your source code, ensuring type safety.
+- You can choose which SDK to use (e.g. tmcp or the official MCP TypeScript SDK).
 
 ## Options
 
