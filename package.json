@@ -1,7 +1,7 @@
 {
-  "name": "gen-mcp",
+  "name": "mcptool",
   "bin": {
-    "gen-mcp": "cli.js"
+    "mcptool": "cli.js"
   },
   "version": "0.0.1",
   "description": "A compiler for producing MCP servers",

@@ -1,17 +1,17 @@
-# gen-mcp
+# mcptool
 
 > A tool to generate TypeScript MCP servers from source code.
 
 ## Install
 
 ```bash
-npm install -g gen-mcp
+npm install -g mcptool
 ```
 
 ## Usage
 
 ```bash
-gen-mcp src/input.ts -o src/server.ts
+npx mcptool src/input.ts -o src/server.ts
 ```
 
 ## Options
@@ -29,5 +29,5 @@ gen-mcp src/input.ts -o src/server.ts
 ### Example with options
 
 ```bash
-gen-mcp src/input.ts -o src/server.ts -t http -f mcp --install
+mcptool src/input.ts -o src/server.ts -t http -f mcp --install
 ```
