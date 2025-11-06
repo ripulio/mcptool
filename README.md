@@ -44,6 +44,7 @@ Key points to note:
 - All exported functions of the entrypoint file with `@mcpTool` JSDoc comments will be exposed as MCP tools.
 - The generated server will use the types defined in your source code, ensuring type safety.
 - You can choose which SDK to use (e.g. tmcp or the official MCP TypeScript SDK).
+- If your function returns a `CallToolResult` (e.g. from tmcp), the generated server will use it as-is rather than wrapping it again.
 
 ## Options
 
