@@ -31,3 +31,16 @@ npx mcptool src/input.ts -o src/server.ts
 ```bash
 mcptool src/input.ts -o src/server.ts -t http -f mcp --install
 ```
+
+## Formatting
+
+The generated code is automatically formatted using the formatter installed locally in your project if it is supported. Supported formatters are:
+
+- [Prettier](https://prettier.io/)
+- [Biome](https://biomejs.dev/)
+
+If none of these are installed, the code will be unformatted and may not adhere to your project's coding style.
+
+## License
+
+MIT License
