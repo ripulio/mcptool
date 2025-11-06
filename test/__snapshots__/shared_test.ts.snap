@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateToolReturn > should wrap return value in CallToolResult if not already 1`] = `
+"{
+    success: true,
+    content: [{
+      type: 'text',
+      text: JSON.stringify(result, null, 2)
+    }]
+  }"
+`;
