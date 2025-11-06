@@ -6,7 +6,7 @@ import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {z} from 'zod';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import * as http from 'node:http';
-import {playWithNumbers} from "../../../../../../Users/jg/code/mcp-compiler/test/fixtures/basic/input.js";
+import {playWithNumbers} from "./input.js";
 
 const adapter = new ZodJsonSchemaAdapter();
 const server = new McpServer({
@@ -55,7 +55,7 @@ exports[`compile > basic file (mcp, stdio) 1`] = `
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {z} from 'zod';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {playWithNumbers} from "../../../../../../Users/jg/code/mcp-compiler/test/fixtures/basic/input.js";
+import {playWithNumbers} from "./input.js";
 
 const adapter = new ZodJsonSchemaAdapter();
 const server = new McpServer({
@@ -95,7 +95,7 @@ import {ZodJsonSchemaAdapter} from '@tmcp/adapter-zod';
 import {z} from 'zod';
 import {HttpTransport} from '@tmcp/transport-http';
 import * as http from 'node:http';
-import {playWithNumbers} from "../../../../../../Users/jg/code/mcp-compiler/test/fixtures/basic/input.js";
+import {playWithNumbers} from "./input.js";
 
 const adapter = new ZodJsonSchemaAdapter();
 const server = new McpServer(
@@ -146,7 +146,7 @@ import {McpServer} from 'tmcp';
 import {ZodJsonSchemaAdapter} from '@tmcp/adapter-zod';
 import {z} from 'zod';
 import {StdioTransport} from '@tmcp/transport-stdio';
-import {playWithNumbers} from "../../../../../../Users/jg/code/mcp-compiler/test/fixtures/basic/input.js";
+import {playWithNumbers} from "./input.js";
 
 const adapter = new ZodJsonSchemaAdapter();
 const server = new McpServer(
