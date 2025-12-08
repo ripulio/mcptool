@@ -48,8 +48,8 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@clack/prompts": "^1.0.0-alpha.6",
-    "package-manager-detector": "^1.5.0",
+    "@clack/prompts": "^1.0.0-alpha.7",
+    "package-manager-detector": "^1.6.0",
     "pkg-types": "^2.3.0",
     "sade": "^1.8.1",
     "tinyexec": "^1.0.2"
